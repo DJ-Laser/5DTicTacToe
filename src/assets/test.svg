@@ -1,0 +1,8 @@
+<svg version="1.1" width="350" height="600" xmlns="http://www.w3.org/2000/svg">
+  <path
+  d= "M 300, 102 Q 102, 102  M 300, 852 L 102, 852 M 300, 1602 L 102, 1602 M 300, 1902 L 102, 1902"
+    fill="transparent"
+    stroke="white"
+    stroke-width="20"
+  />
+</svg>
