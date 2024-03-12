@@ -2,7 +2,7 @@ import { useImmerReducer } from "use-immer";
 import Tree from "../core/Tree.ts";
 import { Bounds } from "../core/foundation.tsx";
 import { TicTacToeBoard, TicTacToeBoardState } from "./TicTacToeBoard.tsx";
-import { MutableRefObject, SVGProps, useRef } from "react";
+import { SVGProps } from "react";
 import {
   TICTACTOE_WIDTH,
   TICTACTOE_HEIGHT,
@@ -34,7 +34,8 @@ const generatePaths = (
   const centerTop = childCenters.shift();
   const centerBottom = childCenters.pop();
 
-  if (childCenters.length === 0) {
+  // only two
+  if (childCenters.length === -1) {
     instructions.push(
       straightPath((centerBottom + centerTop) / 2),
       `M ${TICTACTOE_NEXT_X_CENTER}, ${centerTop} L ${TICTACTOE_NEXT_X_CENTER}, ${centerBottom}`
@@ -227,14 +228,6 @@ const boardsReducer = (
   }
 };
 
-const getRefMap = <K, V>(ref: MutableRefObject<Map<K, V>>): Map<K, V> => {
-  if (!ref.current) {
-    // Initialize the Map on first usage.
-    ref.current = new Map();
-  }
-  return ref.current;
-};
-
 const BoardTree = ({
   boards,
   path,
@@ -244,55 +237,41 @@ const BoardTree = ({
   path: number[];
   dispatch: (action: BoardAction) => void;
 }) => {
-  const childRefs = useRef<Map<TicTacToeBoardState, HTMLDivElement>>(null);
-  const childJSX = boards.branches.map((childBoards, index) => (
-    <div
-      className="col-start-2"
-      key={index}
-      ref={(node) => {
-        const map = getRefMap<TicTacToeBoardState, HTMLDivElement>(childRefs);
-        if (node) {
-          map.set(childBoards.value, node);
-        } else {
-          map.delete(childBoards.value);
-        }
-      }}
-    >
+  const childJSX = boards.branches.map((childBoards, index) => {
+    return (
       <BoardTree
         boards={childBoards}
         path={path.concat(index)}
         dispatch={dispatch}
+        key={index}
       />
-    </div>
-  ));
-  const childCenters: number[] = [];
-  childRefs.current?.forEach((value) => {
-    childCenters.push(
-      value.getBoundingClientRect().height + childCenters[-1] ??
-        TICTACTOE_X_CENTER
     );
   });
-  const lines =
-    childCenters.length === 0 ? null : (
-      <svg
-        className="absolute -z-10"
-        width={TICTACTOE_X_SPACING}
-        height={childCenters[-1] + TICTACTOE_Y_SPACING}
-      >
-        {generatePaths(0, childCenters, {
-          fill: "transparent",
-          stroke: "white",
-          strokeWidth: TICTACTOE_LINE_WIDTH,
-        })}
-      </svg>
-    );
+  const childCenters: number[] = [];
+  let height = 0;
+  childJSX.forEach(() => {
+    childCenters.push(height + TICTACTOE_Y_CENTER);
+    height += TICTACTOE_Y_SPACING;
+  });
   return (
-    <div className={`grid grid-cols-none grid-flow-col w-max`}>
+    <div className={`grid grid-cols-none grid-flow-col w-max col-start-2`}>
       <div
         className="inline-block col-start-1"
         style={{ width: TICTACTOE_X_SPACING, height: TICTACTOE_Y_SPACING }}
       >
-        {lines}
+        {childCenters.length === 0 ? null : (
+          <svg
+            className="absolute -z-10"
+            width={TICTACTOE_X_SPACING}
+            height={childCenters.at(-1) + TICTACTOE_Y_SPACING}
+          >
+            {generatePaths(0, childCenters, {
+              fill: "transparent",
+              stroke: "white",
+              strokeWidth: TICTACTOE_LINE_WIDTH,
+            })}
+          </svg>
+        )}
         <TicTacToeBoard
           board={boards.value}
           turn={boards.depth % 2 == 0 ? "X" : "O"}
