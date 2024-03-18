@@ -1,4 +1,4 @@
-import { useImmerReducer } from "use-immer";
+import { useImmer, useImmerReducer } from "use-immer";
 import Tree from "../core/Tree.ts";
 import { Bounds } from "../core/foundation.tsx";
 import { TicTacToeBoard, TicTacToeBoardState } from "./TicTacToeBoard.tsx";
@@ -232,46 +232,33 @@ const BoardTree = ({
   boards,
   path,
   dispatch,
+  onRender,
 }: {
   boards: Tree<TicTacToeBoardState>;
   path: number[];
   dispatch: (action: BoardAction) => void;
+  onRender?: (height: number) => void;
 }) => {
-  const childJSX = boards.branches.map((childBoards, index) => {
-    return (
-      <BoardTree
-        boards={childBoards}
-        path={path.concat(index)}
-        dispatch={dispatch}
-        key={index}
-      />
-    );
-  });
-  const childCenters: number[] = [];
-  let height = 0;
-  childJSX.forEach(() => {
-    childCenters.push(height + TICTACTOE_Y_CENTER);
-    height += TICTACTOE_Y_SPACING;
-  });
+  const [childHeights, setChildHeights] = useImmer<number[]>([]);
+  const childCenters = [];
+  onRender?.(20);
   return (
     <div className={`grid grid-cols-none grid-flow-col w-max col-start-2`}>
       <div
         className="inline-block col-start-1"
         style={{ width: TICTACTOE_X_SPACING, height: TICTACTOE_Y_SPACING }}
       >
-        {childCenters.length === 0 ? null : (
-          <svg
-            className="absolute -z-10"
-            width={TICTACTOE_X_SPACING}
-            height={childCenters.at(-1) + TICTACTOE_Y_SPACING}
-          >
-            {generatePaths(0, childCenters, {
-              fill: "transparent",
-              stroke: "white",
-              strokeWidth: TICTACTOE_LINE_WIDTH,
-            })}
-          </svg>
-        )}
+        <svg
+          className="absolute -z-10"
+          width={TICTACTOE_X_SPACING}
+          height={childCenters.at(-1) + TICTACTOE_Y_SPACING}
+        >
+          {generatePaths(0, childCenters, {
+            fill: "transparent",
+            stroke: "white",
+            strokeWidth: TICTACTOE_LINE_WIDTH,
+          })}
+        </svg>
         <TicTacToeBoard
           board={boards.value}
           turn={boards.depth % 2 == 0 ? "X" : "O"}
@@ -284,7 +271,14 @@ const BoardTree = ({
           }
         />
       </div>
-      {childJSX}
+      {boards.branches.map((childBoards, index) => (
+        <BoardTree
+          boards={childBoards}
+          path={path.concat(index)}
+          dispatch={dispatch}
+          key={index}
+        />
+      ))}
     </div>
   );
 };

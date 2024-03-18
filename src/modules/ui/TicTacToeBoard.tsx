@@ -56,7 +56,7 @@ const TicTacToeSquare = ({
     }
   })();
 
-  const className = `size-16 flex items-center justify-center bg-gray-900 ${color} ${corner}`;
+  const className = `size-16 flex items-center justify-center bg-gray-900 ${color} ${corner} leading-none font-neusharp`;
   return (
     <div className={className} onPointerUp={onClick}>
       {state}
